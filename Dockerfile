@@ -13,7 +13,7 @@ ENV PHPIZE_DEPS \
 		re2c
 
 # Install dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends apt-utils \
     $PHPIZE_DEPS \
 	openssl \
 	net-tools \
@@ -23,21 +23,39 @@ RUN apt-get update && apt-get install -y \
 	dumb-init \
 	vim \
 	curl \
-	wget
+	wget \
+	zip \
+	unzip \
+	libzip-dev \
+    libicu-dev
 
 # Download archived files
 RUN mkdir -p $DOWNLOAD_DIR && cd $DOWNLOAD_DIR \
-    && wget https://github.com/cdr/code-server/releases/download/1.1156-vsc1.33.1/code-server1.1156-vsc1.33.1-linux-x64.tar.gz \
-    && wget https://www.php.net/distributions/php-7.1.27.tar.gz \
-    && wget http://nginx.org/download/nginx-1.8.1.tar.gz \
+    && wget -q https://github.com/cdr/code-server/releases/download/1.1156-vsc1.33.1/code-server1.1156-vsc1.33.1-linux-x64.tar.gz \
+    && wget -q https://www.php.net/distributions/php-7.1.27.tar.gz \
+    && wget -q http://nginx.org/download/nginx-1.8.1.tar.gz \
     && tar -zxf code-server1.1156-vsc1.33.1-linux-x64.tar.gz \
     && tar -zxf php-7.1.27.tar.gz \
     && tar -zxf nginx-1.8.1.tar.gz
 
 # Install code-server
-RUN mv "$DOWNLOAD_DIR/code-server1.1156-vsc1.33.1-linux-x64/code-server" /usr/local/bin/code-server
+RUN mv $DOWNLOAD_DIR/code-server1.1156-vsc1.33.1-linux-x64/code-server /usr/local/bin/code-server
 
 # Install php7.1.2
+RUN cd $DOWNLOAD_DIR/php-7.1.27 \
+    &&  ./configure \
+    --with-curl \
+    --with-mysqli \
+    --with-openssl \
+    --with-pdo-mysql \
+    --with-zlib \
+    --enable-bcmath \
+    --enable-exif \
+    --enable-fpm \
+    --enable-mbstring \
+    --enable-intl \
+    --enable-zip
+
 
 # Install Nginx
 
@@ -67,7 +85,6 @@ WORKDIR /home/coder/project
 # So that they do not lose their data if they delete the container.
 VOLUME [ "/home/coder/project" ]
 
-COPY --from=0 /src/packages/server/cli-linux-x64 /usr/local/bin/code-server
 EXPOSE 8443
 
 ENTRYPOINT ["dumb-init", "code-server"]
