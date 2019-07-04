@@ -13,7 +13,7 @@ ENV PHPIZE_DEPS \
 		re2c
 
 # Install dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends apt-utils \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     $PHPIZE_DEPS \
 	openssl \
 	net-tools \
@@ -29,20 +29,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends apt-utils \
 	libzip-dev \
     libicu-dev
 
-# Download archived files
-RUN mkdir -p $DOWNLOAD_DIR && cd $DOWNLOAD_DIR \
-    && wget -q https://github.com/cdr/code-server/releases/download/1.1156-vsc1.33.1/code-server1.1156-vsc1.33.1-linux-x64.tar.gz \
-    && wget -q https://www.php.net/distributions/php-7.1.27.tar.gz \
-    && wget -q http://nginx.org/download/nginx-1.8.1.tar.gz \
-    && tar -zxf code-server1.1156-vsc1.33.1-linux-x64.tar.gz \
-    && tar -zxf php-7.1.27.tar.gz \
-    && tar -zxf nginx-1.8.1.tar.gz
+## Create download folder
+RUN mkdir -p $DOWNLOAD_DIR && cd $DOWNLOAD_DIR
+
+## Install Packages
 
 # Install code-server
+RUN cd $DOWNLOAD_DIR && wget -q --no-check-certificate https://github.com/cdr/code-server/releases/download/1.1156-vsc1.33.1/code-server1.1156-vsc1.33.1-linux-x64.tar.gz
+RUN cd $DOWNLOAD_DIR && tar -zxf code-server1.1156-vsc1.33.1-linux-x64.tar.gz
 RUN mv $DOWNLOAD_DIR/code-server1.1156-vsc1.33.1-linux-x64/code-server /usr/local/bin/code-server
 
 # Install php7.1.2
-RUN cd $DOWNLOAD_DIR/php-7.1.27 \
+RUN cd $DOWNLOAD_DIR && wget -q --no-check-certificate https://www.php.net/distributions/php-7.1.28.tar.xz
+RUN cd $DOWNLOAD_DIR && ls -al && tar -xf php-7.1.28.tar.xz
+RUN sha256sum $DOWNLOAD_DIR/php-7.1.28.tar.xz
+RUN cd $DOWNLOAD_DIR/php-7.1.28 \
     &&  ./configure \
     --with-curl \
     --with-mysqli \
@@ -54,7 +55,28 @@ RUN cd $DOWNLOAD_DIR/php-7.1.27 \
     --enable-fpm \
     --enable-mbstring \
     --enable-intl \
-    --enable-zip
+    --enable-zip \
+    && make && make install
+
+#    && wget -q http://nginx.org/download/nginx-1.8.1.tar.gz \
+#    && tar -zxf code-server1.1156-vsc1.33.1-linux-x64.tar.gz \
+#    && tar -zxf php-7.1.27.tar.gz \
+#    && tar -zxf nginx-1.8.1.tar.gz
+#
+## Install php7.1.2
+#RUN cd $DOWNLOAD_DIR/php-7.1.27 \
+#    &&  ./configure \
+#    --with-curl \
+#    --with-mysqli \
+#    --with-openssl \
+#    --with-pdo-mysql \
+#    --with-zlib \
+#    --enable-bcmath \
+#    --enable-exif \
+#    --enable-fpm \
+#    --enable-mbstring \
+#    --enable-intl \
+#    --enable-zip
 
 
 # Install Nginx
